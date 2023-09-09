@@ -15,7 +15,7 @@ import java.util.Random;
 public class ShortestPathCompare {
 
     private static final boolean OUTPUT_SHORTEST_PATH = false;
-    private static final boolean RUN_IN_PARALLEL = true;
+    private static final boolean RUN_IN_PARALLEL = false;
     private static final int LOOP = 100;
 
     private static final Map<String, Long> TIMING_MAP = new HashMap<>();
@@ -26,21 +26,72 @@ public class ShortestPathCompare {
     }
 
     public static void loopingTest() {
-        int numVertices = 1000; // Number of vertices for the random graph
-        int maxWeight = 1000; // Maximum edge weight for the random graph
+        Random random = new Random();
+        /**
+         * Parallel, V=1000,W=1000,S=0,D=100,R=100 
+         * Avg Completion Time For Delta: 7375 ms
+         * Avg Completion Time For Radius: 8906 ms
+         * 
+         * Serial, V=1000,W=1000,S=0,D=100,R=100 
+         * Avg Completion Time For Delta: 10248 ms
+         * Avg Completion Time For Radius: 10358 ms
+         * 
+         * Parallel, V=100,W=1000,S=0,D=1000,R=1000 
+         * Avg Completion Time For Delta: 231 ms
+         * Avg Completion Time For Radius: 674 ms
+         * 
+         * Serial, V=100,W=1000,S=0,D=1000,R=1000 
+         * Avg Completion Time For Delta: 289 ms
+         * Avg Completion Time For Radius: 294 ms
+         * 
+         * Parallel, V=10,W=1000,S=0,D=10000,R=10000 
+         * Avg Completion Time For Delta: 872 ms
+         * Avg Completion Time For Radius: 882 ms
+         * 
+         * Serial, V=10,W=1000,S=0,D=10000,R=10000 
+         * Avg Completion Time For Delta: 742 ms
+         * Avg Completion Time For Radius: 814 ms
+         * 
+         * Parallel, V=1000,W=1000,S=0,D=5,R=5 
+         * Avg Completion Time For Delta: 495 ms
+         * Avg Completion Time For Radius: 579 ms
+         * 
+         * Serial, V=1000,W=1000,S=0,D=5,R=5 
+         * Avg Completion Time For Delta: 622 ms
+         * Avg Completion Time For Radius: 602 ms
+         * 
+         * Parallel, V=1000,W=2,S=R,D=2,R=2 
+         * Avg Completion Time For Delta: 217 ms
+         * Avg Completion Time For Radius: 225 ms
+         * 
+         * Serial, V=1000,W=2,S=R,D=2,R=2
+         * Avg Completion Time For Delta: 260 ms
+         * Avg Completion Time For Radius: 258 ms 
+         * 
+         * Parallel, V=25,W=2,S=R,D=200000,R=200000 
+         * Avg Completion Time For Delta: 6828 ms
+         * Avg Completion Time For Radius: 6861 ms
+         * 
+         * Serial, V=25,W=2,S=R,D=200000,R=200000
+         * Avg Completion Time For Delta: 4729 ms
+         * Avg Completion Time For Radius: 4758 ms
+         */
+        int numVertices = 25; // Number of vertices for the random graph
+        int maxWeight = 2; // Maximum edge weight for the random graph
         int source = 0; // Source node for both algorithms
-        int delta = 50; // Delta value for Delta Stepping
-        int radius = 100; // Radius value for Radius Stepping
-
-        int[][] randomGraph = generateRandomConnectedGraph(numVertices, maxWeight);
+        int delta = 200000; // Delta value for Delta Stepping
+        int radius = 200000; // Radius value for Radius Stepping
 
         for (int i = 0; i < LOOP; i++) {
+            source = random.nextInt(numVertices);
+            System.out.println("Itteration " + i + "/" + LOOP);
+            int[][] randomGraph = generateRandomConnectedGraph(numVertices, maxWeight);
             compareRandomAlgorithms(randomGraph, source, delta, radius, RUN_IN_PARALLEL);
         }
 
         long deltaAvg = TIMING_MAP.get("DELTA") / LOOP;
         long radiusAvg = TIMING_MAP.get("RADIUS") / LOOP;
-        
+
         System.out.println("Avg Completion Time For Delta: " + deltaAvg + " ms");
         System.out.println("Avg Completion Time For Radius: " + radiusAvg + " ms");
 
