@@ -7,15 +7,46 @@ package utexas.edu.shortestpathalgorithm;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 public class ShortestPathCompare {
 
     private static final boolean OUTPUT_SHORTEST_PATH = false;
     private static final boolean RUN_IN_PARALLEL = true;
+    private static final int LOOP = 100;
+
+    private static final Map<String, Long> TIMING_MAP = new HashMap<>();
 
     public static void main(String[] args) {
+//        singleTests();
+        loopingTest();
+    }
+
+    public static void loopingTest() {
+        int numVertices = 1000; // Number of vertices for the random graph
+        int maxWeight = 1000; // Maximum edge weight for the random graph
+        int source = 0; // Source node for both algorithms
+        int delta = 50; // Delta value for Delta Stepping
+        int radius = 100; // Radius value for Radius Stepping
+
+        int[][] randomGraph = generateRandomConnectedGraph(numVertices, maxWeight);
+
+        for (int i = 0; i < LOOP; i++) {
+            compareRandomAlgorithms(randomGraph, source, delta, radius, RUN_IN_PARALLEL);
+        }
+
+        long deltaAvg = TIMING_MAP.get("DELTA") / LOOP;
+        long radiusAvg = TIMING_MAP.get("RADIUS") / LOOP;
+        
+        System.out.println("Avg Completion Time For Delta: " + deltaAvg + " ms");
+        System.out.println("Avg Completion Time For Radius: " + radiusAvg + " ms");
+
+    }
+
+    public static void singleTests() {
         // Test Case 1: User-provided test case
         int[][] edges1 = {
             {0, 1, 2},
@@ -67,11 +98,17 @@ public class ShortestPathCompare {
         System.out.println("Running random test case with " + randomGraph.length + " edges:");
         System.out.println("============================================");
 
+        long deltaSteppingRunningTotal = TIMING_MAP.getOrDefault("DELTA", 0l);
+        long radiusSteppingRunningTotal = TIMING_MAP.getOrDefault("RADIUS", 0l);
+
         System.out.println("Delta Stepping Algorithm:");
-        DeltaSteppingMain.runDeltaStepping(randomGraph, source, delta, OUTPUT_SHORTEST_PATH, runInParallel);
+        deltaSteppingRunningTotal += DeltaSteppingMain.runDeltaStepping(randomGraph, source, delta, OUTPUT_SHORTEST_PATH, runInParallel);
 
         System.out.println("Radius Stepping Algorithm:");
-        RadiusSteppingMain.runRadiusStepping(randomGraph, source, radius, OUTPUT_SHORTEST_PATH, runInParallel);
+        radiusSteppingRunningTotal += RadiusSteppingMain.runRadiusStepping(randomGraph, source, radius, OUTPUT_SHORTEST_PATH, runInParallel);
+
+        TIMING_MAP.put("DELTA", deltaSteppingRunningTotal);
+        TIMING_MAP.put("RADIUS", radiusSteppingRunningTotal);
     }
 
     public static int[][] generateRandomConnectedGraph(int numVertices, int maxWeight) {

@@ -124,7 +124,7 @@ public class DeltaSteppingMain {
         runDeltaStepping(numVertices2, maxWeight2, source2, delta2, true, true);
     }
 
-    public static void runDeltaStepping(int[][] edges, int source, int delta, boolean outputShortestPath, boolean runInParallel) {
+    public static long runDeltaStepping(int[][] edges, int source, int delta, boolean outputShortestPath, boolean runInParallel) {
         int numVertices = Arrays.stream(edges)
                 .flatMapToInt(Arrays::stream)
                 .max()
@@ -154,11 +154,12 @@ public class DeltaSteppingMain {
         }
         long executionTime = endTime - startTime;
         System.out.println("Execution time: " + executionTime + " milliseconds\n");
+        return executionTime;
     }
 
-    public static void runDeltaStepping(int numVertices, int maxWeight, int source, int delta, boolean outputShortestPath, boolean runInParallel) {
+    public static long runDeltaStepping(int numVertices, int maxWeight, int source, int delta, boolean outputShortestPath, boolean runInParallel) {
         List<int[]> edges = generateRandomConnectedGraph(numVertices, maxWeight);
-        runDeltaStepping(edges.toArray(new int[0][]), source, delta, outputShortestPath, runInParallel);
+        return runDeltaStepping(edges.toArray(new int[0][]), source, delta, outputShortestPath, runInParallel);
     }
 
     public static List<int[]> generateRandomConnectedGraph(int numVertices, int maxWeight) {

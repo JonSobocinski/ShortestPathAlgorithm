@@ -96,7 +96,7 @@ public class RadiusSteppingMain {
         runRadiusStepping(numVertices2, maxWeight2, source2, radius2, true, true);
     }
 
-    public static void runRadiusStepping(int[][] edges, int source, int radius, boolean outputShortestPath, boolean runInParallel) {
+    public static long runRadiusStepping(int[][] edges, int source, int radius, boolean outputShortestPath, boolean runInParallel) {
         int numVertices = Arrays.stream(edges)
                 .flatMapToInt(Arrays::stream)
                 .max()
@@ -127,11 +127,12 @@ public class RadiusSteppingMain {
 
         long executionTime = endTime - startTime;
         System.out.println("Execution time: " + executionTime + " milliseconds\n");
+        return executionTime;
     }
 
-    public static void runRadiusStepping(int numVertices, int maxWeight, int source, int radius, boolean outputShortestPath, boolean runInParallel) {
+    public static long runRadiusStepping(int numVertices, int maxWeight, int source, int radius, boolean outputShortestPath, boolean runInParallel) {
         List<int[]> edges = generateRandomConnectedGraph(numVertices, maxWeight);
-        runRadiusStepping(edges.toArray(new int[0][]), source, radius, outputShortestPath, runInParallel);
+        return runRadiusStepping(edges.toArray(new int[0][]), source, radius, outputShortestPath, runInParallel);
     }
 
     public static List<int[]> generateRandomConnectedGraph(int numVertices, int maxWeight) {
