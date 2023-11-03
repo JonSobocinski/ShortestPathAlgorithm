@@ -14,9 +14,9 @@ import java.util.concurrent.*;
  */
 class DeltaStepping {
 
-    private Graph graph;
-    private int source;
-    private int[] dist;
+    private final Graph graph;
+    private final int source;
+    private final int[] dist;
 
     /**
      * Initializes the DeltaStepping algorithm with the given graph and source
@@ -52,8 +52,8 @@ class DeltaStepping {
 
     private class DeltaStepTask extends RecursiveAction {
 
-        private int start;
-        private int end;
+        private final int start;
+        private final int end;
 
         DeltaStepTask(int start, int end) {
             this.start = start;

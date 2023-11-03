@@ -10,9 +10,9 @@ import java.util.concurrent.*;
 
 class RadiusStepping {
 
-    private Graph graph;
-    private int source;
-    private int[] dist;
+    private final Graph graph;
+    private final int source;
+    private final int[] dist;
 
     public RadiusStepping(Graph graph, int source) {
         this.graph = graph;
@@ -35,8 +35,8 @@ class RadiusStepping {
 
     private class RadiusStepTask extends RecursiveAction {
 
-        private int start;
-        private int end;
+        private final int start;
+        private final int end;
 
         RadiusStepTask(int start, int end) {
             this.start = start;
