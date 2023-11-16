@@ -8,79 +8,103 @@ package utexas.edu.shortestpathalgorithm;
 import java.util.*;
 import java.util.concurrent.*;
 
+/**
+ * Implements the Radius Stepping algorithm for finding shortest paths in a
+ * graph.
+ */
 class RadiusStepping {
 
     private final Graph graph;
     private final int source;
     private final int[] dist;
 
+    private LinkedList<Integer> queue;
+
+    /**
+     * Initializes the RadiusStepping algorithm with the given graph and source
+     * node.
+     *
+     * @param graph The graph to find shortest paths in.
+     * @param source The source node.
+     */
     public RadiusStepping(Graph graph, int source) {
         this.graph = graph;
         this.source = source;
         this.dist = new int[graph.getAdjacencyList().length];
+        queue = new LinkedList<>();
         Arrays.fill(dist, Integer.MAX_VALUE); // Initialize distances to infinity
     }
 
+    /**
+     * Runs the Radius Stepping algorithm with the specified radius value.
+     *
+     * @param radius The radius value for the algorithm.
+     */
     public void radiusStep(int radius, boolean runInParallel) {
-        dist[source] = 0; // Set the source node's distance to 0
         int numThreads = runInParallel ? Runtime.getRuntime().availableProcessors() : 1;
         ForkJoinPool pool = new ForkJoinPool(numThreads);
 
-        for (int r = 1; r <= radius; r++) {
-            pool.invoke(new RadiusStepTask(0, dist.length));
-        }
+        queue.add(source);
+        dist[source] = 0; // Set the source node's distance to 0
 
+        while (!queue.isEmpty()) {
+            LinkedList<Integer> nodes = queue;
+            queue = new LinkedList<>();
+            for (Integer n: nodes) {
+                pool.invoke(new RadiusStepTask(n));
+            }
+            while(true) {if (pool.awaitQuiescence(100, TimeUnit.SECONDS)) break;};
+        }
         pool.shutdown();
     }
 
     private class RadiusStepTask extends RecursiveAction {
 
-        private final int start;
-        private final int end;
+        private final int node;
 
-        RadiusStepTask(int start, int end) {
-            this.start = start;
-            this.end = end;
+        RadiusStepTask(int node) {
+            this.node = node;
         }
 
         @Override
         protected void compute() {
-            for (int u = start; u < end; u++) {
-                for (Edge edge : graph.getAdjacencyList()[u]) {
-                    int v = edge.dest;
-                    int weight = edge.weight;
+            for (Edge edge : graph.getAdjacencyList()[node]) {
+                int neighbour = edge.dest;
+                int weight = edge.weight;
 
-                    if (dist[u] + weight < dist[v]) {
-                        dist[v] = dist[u] + weight;
-                    }
+                if (dist[node] + weight < dist[neighbour]) {
+                    dist[neighbour] = dist[node] + weight;
+                    queue.add(neighbour);
                 }
-            }
-
-            if (end - start > 1) {
-                int middle = (start + end) / 2;
-                RadiusStepTask leftTask = new RadiusStepTask(start, middle);
-                RadiusStepTask rightTask = new RadiusStepTask(middle, end);
-                invokeAll(leftTask, rightTask);
             }
         }
     }
 
+    /**
+     * Gets the computed shortest distances from the source node to all other
+     * nodes.
+     *
+     * @return An array of shortest distances.
+     */
     public int[] getShortestDistances() {
         return dist;
     }
 }
 
+/**
+ * The main class to demonstrate the Radius Stepping algorithm with test cases.
+ */
 public class RadiusSteppingMain {
 
     public static void main(String[] args) {
         // Test Case 1: User-provided test case
         int[][] edges1 = {
-            {0, 1, 2},
-            {0, 3, 6},
-            {1, 2, 3},
-            {2, 4, 1},
-            {3, 2, 1},
-            {3, 4, 4}
+                {0, 1, 2},
+                {0, 3, 6},
+                {1, 2, 3},
+                {2, 4, 1},
+                {3, 2, 1},
+                {3, 4, 4}
         };
         int source1 = 0;
         int radius1 = 2;
@@ -119,14 +143,18 @@ public class RadiusSteppingMain {
 
         if (outputShortestPath) {
             // Print the shortest distances and execution time
-            System.out.println("Shortest distances from node " + source + " with radius " + radius + ":");
+            System.out.println("Shortest distances from node " + source + ":");
             for (int i = 0; i < numVertices; i++) {
                 System.out.println("Node " + i + ": " + shortestDistances[i]);
             }
         }
 
         long executionTime = endTime - startTime;
-        System.out.println("Execution time: " + executionTime + " milliseconds\n");
+        long totaDistance = 0;
+        for (int i = 0; i < numVertices; i++) {
+            totaDistance += shortestDistances[i];
+        }
+        System.out.println("Execution time: " + executionTime + " milliseconds | Total Distance: " + totaDistance + "\n");
         return executionTime;
     }
 
