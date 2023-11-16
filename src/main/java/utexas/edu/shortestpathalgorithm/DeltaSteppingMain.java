@@ -6,7 +6,9 @@
 package utexas.edu.shortestpathalgorithm;
 
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.RecursiveAction;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Implements the Delta Stepping algorithm for finding shortest paths in a
@@ -17,6 +19,10 @@ class DeltaStepping {
     private final Graph graph;
     private final int source;
     private final int[] dist;
+
+    private int max_dist;
+
+    private LinkedList<Integer> queue;
 
     /**
      * Initializes the DeltaStepping algorithm with the given graph and source
@@ -29,6 +35,7 @@ class DeltaStepping {
         this.graph = graph;
         this.source = source;
         this.dist = new int[graph.getAdjacencyList().length];
+        queue = new LinkedList<>();
         Arrays.fill(dist, Integer.MAX_VALUE); // Initialize distances to infinity
     }
 
@@ -38,48 +45,58 @@ class DeltaStepping {
      * @param delta The delta value for the algorithm.
      */
     public void deltaStep(int delta, boolean runInParallel) {
-        dist[source] = 0; // Set the source node's distance to 0
         int numThreads = runInParallel ? Runtime.getRuntime().availableProcessors() : 1;
         ForkJoinPool pool = new ForkJoinPool(numThreads);
 
-        // Perform delta iterations in parallel
-        for (int i = 0; i < delta; i++) {
-            pool.invoke(new DeltaStepTask(0, dist.length));
-        }
+        queue.add(source);
+        dist[source] = 0; // Set the source node's distance to 0
+        max_dist = delta;
 
+        boolean next_section = true;
+        while (!queue.isEmpty()) {
+            LinkedList<Integer> nodes = queue;
+            queue = new LinkedList<>();
+            for (Integer n: nodes) {
+                pool.invoke(new DeltaStepTask(n));
+            }
+            while(true) {if (pool.awaitQuiescence(100, TimeUnit.SECONDS)) break;};
+
+
+            while (queue.isEmpty() && next_section) {
+                next_section = false;
+                for (int i = 0; i < dist.length; i++) {
+                    if (max_dist < dist[i] && dist[i] < max_dist + delta) {
+                        queue.add(i);
+                    } else if (dist[i] > max_dist && dist[i] != Integer.MAX_VALUE) {
+                        next_section = true;
+                    }
+                }
+                max_dist += delta;
+            }
+        }
         pool.shutdown();
     }
 
     private class DeltaStepTask extends RecursiveAction {
 
-        private final int start;
-        private final int end;
+        private final int node;
 
-        DeltaStepTask(int start, int end) {
-            this.start = start;
-            this.end = end;
+        DeltaStepTask(int node) {
+            this.node = node;
         }
 
         @Override
         protected void compute() {
-            for (int u = start; u < end; u++) {
-                for (Edge edge : graph.getAdjacencyList()[u]) {
-                    int v = edge.dest;
-                    int weight = edge.weight;
+            for (Edge edge : graph.getAdjacencyList()[node]) {
+                int neighbour = edge.dest;
+                int weight = edge.weight;
 
-                    // Relaxation step
-                    if (dist[u] + weight < dist[v]) {
-                        dist[v] = dist[u] + weight;
+                if (dist[node] + weight < dist[neighbour]) {
+                    dist[neighbour] = dist[node] + weight;
+                    if (dist[neighbour] < max_dist) {
+                        queue.add(neighbour);
                     }
                 }
-            }
-
-            if (end - start > 1) {
-                // Split the range into two subtasks for parallel processing
-                int middle = (start + end) / 2;
-                DeltaStepTask leftTask = new DeltaStepTask(start, middle);
-                DeltaStepTask rightTask = new DeltaStepTask(middle, end);
-                invokeAll(leftTask, rightTask);
             }
         }
     }
@@ -103,12 +120,12 @@ public class DeltaSteppingMain {
     public static void main(String[] args) {
         // Test Case 1: User-provided test case
         int[][] edges1 = {
-            {0, 1, 2},
-            {0, 3, 6},
-            {1, 2, 3},
-            {2, 4, 1},
-            {3, 2, 1},
-            {3, 4, 4}
+                {0, 1, 2},
+                {0, 3, 6},
+                {1, 2, 3},
+                {2, 4, 1},
+                {3, 2, 1},
+                {3, 4, 4}
         };
         int source1 = 0;
         int delta1 = 2;
@@ -152,8 +169,15 @@ public class DeltaSteppingMain {
                 System.out.println("Node " + i + ": " + shortestDistances[i]);
             }
         }
+
+
         long executionTime = endTime - startTime;
-        System.out.println("Execution time: " + executionTime + " milliseconds\n");
+        long totaDistance = 0;
+        for (int i = 0; i < numVertices; i++) {
+            totaDistance += shortestDistances[i];
+        }
+        System.out.println("Execution time: " + executionTime + " milliseconds | Total Distance: " + totaDistance + "\n");
+
         return executionTime;
     }
 
